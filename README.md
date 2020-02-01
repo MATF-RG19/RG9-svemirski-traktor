@@ -34,6 +34,7 @@ i izvrsiti sledece komande:\
 |--|--|
 | `<` | skreni levo |
 | `>` | skreni desno |
+| 'Space' | skok |
 | `s` | zapocni igru |
 | `p` | pauziraj igru |
 | `esc` | izadji iz igre |
