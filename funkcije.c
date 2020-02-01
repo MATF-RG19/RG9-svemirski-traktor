@@ -167,8 +167,8 @@ void draw_planet(GLuint texture)
 void draw_star(void)
 {
     /* Koeficijenti refleksije materijala. */
-    GLfloat ambient_coeffs[] = { 1.0, 0.2, 0.2, 1 };
-    GLfloat diffuse_coeffs[] = { 0.0, 0.0, 0.6, 1 };
+    GLfloat ambient_coeffs[] = { 1.0, 1.0, 1.0, 0.5 };
+    GLfloat diffuse_coeffs[] = { 0.6, 0.6, 0.6, 0.5 };
     GLfloat specular_coeffs[] = { 1, 1, 1, 1 };
     GLfloat shininess = 50;
 

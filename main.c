@@ -19,7 +19,14 @@
 /* Ostale konstante. */
 #define INTERVAL 7
 #define ROAD_TIMER_ID 1
+#define JUMP_INTERVAL 1
+#define JUMP_TIMER_ID 2
 #define NUM_OF_OBSTACLES 95
+#define PI 3.1415926535
+
+/* Kodovi tastera */
+#define SPACEBAR 32
+#define ESC 27
 
 /* Identifikatori tekstura. */
 static GLuint textures[6];
@@ -36,12 +43,15 @@ static void on_reshape(int width, int height);
 static void on_display(void);
 static void on_special_key_press(int key, int x, int y);
 static void on_timer(int timer_id);
+static void on_jump_timer(int timer_id);
 
 /* Koordinate traktora. */
 static float x_tractor = 3.0;
 static float y_tractor = -0.5;
 static float z_tractor = 0;
 static float wheel_rotation = 0;
+static float has_jumped = 0;
+static float time_passed = 0;
 
 /* Koordinate staze. */
 static float x_road = 10;
@@ -81,6 +91,7 @@ int main(int argc, char **argv)
     glutDisplayFunc(on_display);
     glutSpecialFunc(on_special_key_press);
     glutTimerFunc(INTERVAL, on_timer, ROAD_TIMER_ID);
+    glutTimerFunc(JUMP_INTERVAL, on_jump_timer, JUMP_TIMER_ID);
 
     /* Random seed. */
     srand(time(NULL));
@@ -155,16 +166,28 @@ static void on_keyboard(unsigned char key, int x, int y)
 {
     switch (key) {
     /* Pritiskom ESC izlazi se iz igre. */
-    case 27:
+    case ESC:
         /* Oslobadjaju se korisceni resursi i zavrsava se program. */
         glDeleteTextures(6, textures);
         exit(0);
         break;
+    /* Pritiskom na SPACEBAR, traktor skace. */
+    case SPACEBAR:
+      if(!has_jumped) {
+        has_jumped = 1;
+        glutTimerFunc(JUMP_INTERVAL, on_jump_timer, JUMP_TIMER_ID);
+      }
+      break;
     /* Pritiskom na 's' (start), zapocinje se igra. */
     case 's':
     case 'S':
-        game_active = 1;
-        glutTimerFunc(INTERVAL, on_timer, ROAD_TIMER_ID);
+        /* Za lakse testiranje igre, treba staviti uslov petlje pod komentare.
+           To omogucava da se igra proizvoljno ubrzava pritiskom na taster 's',
+           sto dalje omogucava da brze (ne) stignemo do kraja. */
+        if (game_active != 1) {
+          game_active = 1;
+          glutTimerFunc(INTERVAL, on_timer, ROAD_TIMER_ID);
+        }
         break;
     /* Pritiskom na 'p' (pause), pauzira se igra. */
     case 'p':
@@ -225,6 +248,16 @@ static void on_timer(int timer_id) {
     }
 }
 
+static void on_jump_timer(int timer_id) {
+    if (!game_active || !has_jumped)
+        return;
+
+    time_passed += 0.05;
+
+    glutPostRedisplay();
+    glutTimerFunc(INTERVAL, on_jump_timer, ROAD_TIMER_ID);
+}
+
 static void on_display(void)
 {
     /* Brise se prethodni sadrzaj prozora. */
@@ -263,7 +296,7 @@ static void on_display(void)
       glPopMatrix();
 
       /* Provera kolizije. */
-      if(has_crashed(x_tractor, y_tractor, z_tractor, obstacles_x[i] + x_road,
+      if(!has_jumped && has_crashed(x_tractor, y_tractor, z_tractor, obstacles_x[i] + x_road,
          obstacles_y[i], obstacles_z[i])) {
         game_active = 0;
         print_game_over(score_string, window_width, window_height);
@@ -271,7 +304,14 @@ static void on_display(void)
     }
 
     /* Iscrtavanje traktora. */
-    draw_tractor(x_tractor, y_tractor, z_tractor, wheel_rotation);
+    if(has_jumped == 1) {
+        if (time_passed > 2*PI) {
+            has_jumped = 0;
+            time_passed = 0;
+        }
+    }
+
+    draw_tractor(x_tractor, y_tractor + 1 - cos(time_passed), z_tractor, wheel_rotation);
     wheel_rotation-=1;
 
     score = (int)x_road - 10;
